@@ -11,4 +11,11 @@ const userSchema = z.object({
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/, "Password must contain atleast one uppercase, lowercase, number and special character"),
 });
 
+export const signinSchema = z.object({
+  name: z.string(),
+  username: z.string(),
+  email: z.string().email("Invalid email"),
+  password: z.string(),
+});
+
 export default userSchema;
