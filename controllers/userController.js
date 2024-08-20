@@ -2,8 +2,9 @@ import User from "../models/userModel.js";
 import userSchema, { signinSchema } from "../schemas/userSchema.js";
 import bcrypt from "bcryptjs";
 import { hashPassword } from "../utils/hashPassword.js";
-import { ApiResponse, ApiError } from "../utils/ApiResponses.js";
+import { ApiError } from "../utils/ApiResponses.js";
 import jwt from "jsonwebtoken";
+import { tokenExpiry } from "../utils/tokenExpiry.js";
 
 export const signup = async (req, res) => {
   try {
@@ -26,7 +27,12 @@ export const signup = async (req, res) => {
     const newUser = new User({ name, username, email, password: hashedPassword });
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: tokenExpiry });
+
+    res.cookie("token", token, {
+      maxAge: tokenExpiry * 1000,
+      httpOnly: true,
+    });
 
     return res.status(201).json({ message: "user created successfully", data: newUser, token: token });
   } catch (error) {
@@ -51,8 +57,12 @@ export const signin = async (req, res) => {
     if (!isValidPassword) {
       return res.status(401).json(new ApiError(401, "Invalid password"));
     }
-    
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
+    res.cookie("token", token, {
+      maxAge: tokenExpiry * 1000,
+      httpOnly: true,
+    });
     return res.status(200).json({ message: "user logged in successfully", data: user, token: token });
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
