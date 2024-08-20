@@ -85,5 +85,7 @@ export const updatePassword = async (req, res) => {
     const user = await User.findOneAndUpdate({ email: email }, { password: hashedPassword });
 
     res.status(200).json(new ApiResponse(200, "Password updated successfully", user));
-  } catch (error) {}
+  } catch (error) {
+    res.status(500).json(new ApiError(500, error.message));
+  }
 };
