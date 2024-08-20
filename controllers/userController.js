@@ -3,6 +3,7 @@ import userSchema, { signinSchema } from "../schemas/userSchema.js";
 import bcrypt from "bcryptjs";
 import { hashPassword } from "../utils/hashPassword.js";
 import { ApiResponse, ApiError } from "../utils/ApiResponses.js";
+import jwt from "jsonwebtoken";
 
 export const signup = async (req, res) => {
   try {
@@ -24,9 +25,14 @@ export const signup = async (req, res) => {
 
     const newUser = new User({ name, username, email, password: hashedPassword });
     await newUser.save();
-    return res.status(201).json( new ApiResponse(201, "User created successfully", newUser));
+
+    console.log(process.env.JWT_SECRET_KEY);
+
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
+
+    return res.status(201).json({ message: "user created successfully", data: newUser, token: token });
   } catch (error) {
-    return res.status(500).json( new ApiError(500, error.message));
+    return res.status(500).json(new ApiError(500, error.message));
   }
 };
 
@@ -47,7 +53,11 @@ export const signin = async (req, res) => {
     if (!isValidPassword) {
       return res.status(401).json(new ApiError(401, "Invalid password"));
     }
-    return res.status(200).json(new ApiResponse(200, "User signed in successfully", user));
+
+    console.log(process.env.JWT_SECRET_KEY);
+    
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
+    return res.status(200).json({ message: "user logged in successfully", data: user, token: token });
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
