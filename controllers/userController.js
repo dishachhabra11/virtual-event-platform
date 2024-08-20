@@ -2,7 +2,7 @@ import User from "../models/userModel.js";
 import userSchema, { signinSchema } from "../schemas/userSchema.js";
 import bcrypt from "bcryptjs";
 import { hashPassword } from "../utils/hashPassword.js";
-import { ApiError } from "../utils/ApiResponses.js";
+import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 import jwt from "jsonwebtoken";
 import { tokenExpiry } from "../utils/tokenExpiry.js";
 
@@ -67,4 +67,23 @@ export const signin = async (req, res) => {
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const passwordSchema = userSchema.pick({ password: true });
+    const validatePasswordStrength = passwordSchema.safeParse({ password });
+
+    if (!validatePasswordStrength.success) {
+      const error = validatePasswordStrength.error.issues[0].message;
+      return res.status(400).json(new ApiError(400, error));
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const user = await User.findOneAndUpdate({ email: email }, { password: hashedPassword });
+
+    res.status(200).json(new ApiResponse(200, "Password updated successfully", user));
+  } catch (error) {}
 };
