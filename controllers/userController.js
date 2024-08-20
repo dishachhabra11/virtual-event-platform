@@ -26,8 +26,6 @@ export const signup = async (req, res) => {
     const newUser = new User({ name, username, email, password: hashedPassword });
     await newUser.save();
 
-    console.log(process.env.JWT_SECRET_KEY);
-
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
 
     return res.status(201).json({ message: "user created successfully", data: newUser, token: token });
@@ -53,8 +51,6 @@ export const signin = async (req, res) => {
     if (!isValidPassword) {
       return res.status(401).json(new ApiError(401, "Invalid password"));
     }
-
-    console.log(process.env.JWT_SECRET_KEY);
     
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
     return res.status(200).json({ message: "user logged in successfully", data: user, token: token });
