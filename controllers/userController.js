@@ -5,7 +5,8 @@ import { hashPassword } from "../utils/hashPassword.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 import jwt from "jsonwebtoken";
 import { tokenExpiry } from "../utils/tokenExpiry.js";
-
+import { transporter, setMailOptions } from "../utils/sendMail.js";
+import crypto from "crypto";
 export const signup = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
@@ -30,7 +31,7 @@ export const signup = async (req, res) => {
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: tokenExpiry });
 
     res.cookie("token", token, {
-      maxAge: tokenExpiry * 1000,
+      maxAge: tokenExpiry * 100,
       httpOnly: true,
     });
 
@@ -60,7 +61,7 @@ export const signin = async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
     res.cookie("token", token, {
-      maxAge: tokenExpiry * 1000,
+      maxAge: tokenExpiry * 100,
       httpOnly: true,
     });
     return res.status(200).json({ message: "user logged in successfully", data: user, token: token });
@@ -87,5 +88,32 @@ export const updatePassword = async (req, res) => {
     res.status(200).json(new ApiResponse(200, "Password updated successfully", user));
   } catch (error) {
     res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const sendOtpforPasswordReset = async (req, res) => {
+  //  chcekc if mail exsist
+  //send otp to mail
+  //otp should be 6 char long
+  try {
+
+    
+    const email = req.body.email;
+    const user = User.findOne({ email: email });
+    if (!user) {
+      return res.status(404).json(new ApiError(404, "User not found"));
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    const mailOptions = setMailOptions(email, otp);
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).json(new ApiError(500, error.message));
+      }
+      return res.status(200).json(new ApiResponse(200, "OTP sent successfully", info));
+    });
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
   }
 };
