@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { tokenExpiry } from "../utils/tokenExpiry.js";
 import { transporter, setMailOptions } from "../utils/sendMail.js";
 import crypto from "crypto";
+import { google } from "googleapis";
 export const signup = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
@@ -91,13 +92,8 @@ export const updatePassword = async (req, res) => {
   }
 };
 
-export const sendOtpforPasswordReset = async (req, res) => {
-  //  chcekc if mail exsist
-  //send otp to mail
-  //otp should be 6 char long
+export const sendOtpforForgotPassword = async (req, res) => {
   try {
-
-    
     const email = req.body.email;
     const user = User.findOne({ email: email });
     if (!user) {
@@ -107,6 +103,7 @@ export const sendOtpforPasswordReset = async (req, res) => {
     const otp = crypto.randomInt(100000, 999999).toString();
 
     const mailOptions = setMailOptions(email, otp);
+
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         return res.status(500).json(new ApiError(500, error.message));
