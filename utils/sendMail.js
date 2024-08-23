@@ -1,7 +1,6 @@
 import nodemailer from "nodemailer";
 import { google } from "googleapis";
 import dotenv from "dotenv";
-
 dotenv.config();
 
 const redirect_uri = "https://developers.google.com/oauthplayground";

@@ -8,6 +8,9 @@ import { tokenExpiry } from "../utils/tokenExpiry.js";
 import { transporter, setMailOptions } from "../utils/sendMail.js";
 import crypto from "crypto";
 import { google } from "googleapis";
+import client from "../utils/redisClient.js";
+
+
 export const signup = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
@@ -101,6 +104,10 @@ export const sendOtpforForgotPassword = async (req, res) => {
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
+    await client.set(email, otp, {
+      EX:300,
+    });
+    console.log(`OTP stored successfully with TTL of 300 seconds.`);
 
     const mailOptions = setMailOptions(email, otp);
 
