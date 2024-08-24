@@ -5,16 +5,16 @@ import userRouter from "./routes/userRoutes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 const app = express();
-const port = 5000;
+const PORT = process.env.PORT || 5000;
 
 connectDb();
-dotenv.config();
+dotenv.config({ path: "./.env.example" });
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/user", userRouter);
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
