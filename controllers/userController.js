@@ -10,7 +10,6 @@ import crypto from "crypto";
 import { google } from "googleapis";
 import client from "../utils/redisClient.js";
 
-
 export const signup = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
@@ -105,7 +104,7 @@ export const sendOtpforForgotPassword = async (req, res) => {
 
     const otp = crypto.randomInt(100000, 999999).toString();
     await client.set(email, otp, {
-      EX:300,
+      EX: 300,
     });
     console.log(`OTP stored successfully with TTL of 300 seconds.`);
 
@@ -117,6 +116,22 @@ export const sendOtpforForgotPassword = async (req, res) => {
       }
       return res.status(200).json(new ApiResponse(200, "OTP sent successfully", info));
     });
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const storedOtp = await client.get(email);
+    if (!storedOtp) {
+      return res.status(404).json(new ApiError(404, "otp expired or does not exists"));
+    }
+    if (storedOtp !== otp) {
+      return res.status(401).json(new ApiError(401, "Invalid OTP"));
+    }
+    return res.status(200).json(new ApiResponse(200, "OTP verified successfully"));
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
