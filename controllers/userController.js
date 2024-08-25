@@ -9,7 +9,6 @@ import { transporter, setMailOptions } from "../utils/sendMail.js";
 import crypto from "crypto";
 import { google } from "googleapis";
 import client from "../utils/redisClient.js";
-import { V2 } from "paseto";
 
 export const signup = async (req, res) => {
   try {
@@ -87,7 +86,6 @@ export const updatePassword = async (req, res) => {
       const error = validatePasswordStrength.error.issues[0].message;
       return res.status(400).json(new ApiError(400, error));
     }
-
     const hashedPassword = await hashPassword(password);
 
     const user = await User.findOneAndUpdate({ email: email }, { password: hashedPassword });
