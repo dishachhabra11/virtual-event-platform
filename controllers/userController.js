@@ -77,7 +77,7 @@ export const updatePassword = async (req, res) => {
   try {
     const { token, password } = req.body;
 
-    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const email = decoded.email;
     const passwordSchema = userSchema.pick({ password: true });
     const validatePasswordStrength = passwordSchema.safeParse({ password });
@@ -133,7 +133,7 @@ export const verifyOtp = async (req, res) => {
     if (storedOtp !== otp) {
       return res.status(401).json(new ApiError(401, "Invalid OTP"));
     }
-    const token = jwt.sign({ email: email }, process.env.SECRET_KEY, {
+    const token = jwt.sign({ email: email }, process.env.JWT_SECRET_KEY, {
       expiresIn: "5m",
     });
     return res.status(200).json(new ApiResponse(200, "OTP verified successfully", token));
