@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 5000;
 
 connectDb();
 dotenv.config({ path: "./.env.dev" });
+
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());

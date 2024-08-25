@@ -2,9 +2,13 @@ import User from "../models/userModel.js";
 import userSchema, { signinSchema } from "../schemas/userSchema.js";
 import bcrypt from "bcryptjs";
 import { hashPassword } from "../utils/hashPassword.js";
-import { ApiError } from "../utils/ApiResponses.js";
+import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 import jwt from "jsonwebtoken";
 import { tokenExpiry } from "../utils/tokenExpiry.js";
+import { transporter, setMailOptions } from "../utils/sendMail.js";
+import crypto from "crypto";
+import { google } from "googleapis";
+import client from "../utils/redisClient.js";
 
 export const signup = async (req, res) => {
   try {
@@ -30,7 +34,7 @@ export const signup = async (req, res) => {
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: tokenExpiry });
 
     res.cookie("token", token, {
-      maxAge: tokenExpiry * 1000,
+      maxAge: tokenExpiry * 100,
       httpOnly: true,
     });
 
@@ -60,10 +64,79 @@ export const signin = async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
     res.cookie("token", token, {
-      maxAge: tokenExpiry * 1000,
+      maxAge: tokenExpiry * 100,
       httpOnly: true,
     });
     return res.status(200).json({ message: "user logged in successfully", data: user, token: token });
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const email = decoded.email;
+    const passwordSchema = userSchema.pick({ password: true });
+    const validatePasswordStrength = passwordSchema.safeParse({ password });
+
+    if (!validatePasswordStrength.success) {
+      const error = validatePasswordStrength.error.issues[0].message;
+      return res.status(400).json(new ApiError(400, error));
+    }
+    const hashedPassword = await hashPassword(password);
+
+    const user = await User.findOneAndUpdate({ email: email }, { password: hashedPassword });
+
+    res.status(200).json(new ApiResponse(200, "Password updated successfully", user));
+  } catch (error) {
+    res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const sendOtpforForgotPassword = async (req, res) => {
+  try {
+    const email = req.body.email;
+    const user = User.findOne({ email: email });
+    if (!user) {
+      return res.status(404).json(new ApiError(404, "User not found"));
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    await client.set(email, otp, {
+      EX: 300,
+    });
+    console.log(`OTP stored successfully with TTL of 300 seconds.`);
+
+    const mailOptions = setMailOptions(email, otp);
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).json(new ApiError(500, error.message));
+      }
+      return res.status(200).json(new ApiResponse(200, "OTP sent successfully", info));
+    });
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const storedOtp = await client.get(email);
+    if (!storedOtp) {
+      return res.status(404).json(new ApiError(404, "otp expired or does not exists"));
+    }
+    if (storedOtp !== otp) {
+      return res.status(401).json(new ApiError(401, "Invalid OTP"));
+    }
+    const token = jwt.sign({ email: email }, process.env.JWT_SECRET_KEY, {
+      expiresIn: "5m",
+    });
+    return res.status(200).json(new ApiResponse(200, "OTP verified successfully", token));
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
