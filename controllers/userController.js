@@ -9,6 +9,7 @@ import { transporter, setMailOptions } from "../utils/sendMail.js";
 import crypto from "crypto";
 import { google } from "googleapis";
 import client from "../utils/redisClient.js";
+import { V2 } from "paseto";
 
 export const signup = async (req, res) => {
   try {
@@ -75,7 +76,10 @@ export const signin = async (req, res) => {
 
 export const updatePassword = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { token, password } = req.body;
+
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    const email = decoded.email;
     const passwordSchema = userSchema.pick({ password: true });
     const validatePasswordStrength = passwordSchema.safeParse({ password });
 
@@ -131,7 +135,10 @@ export const verifyOtp = async (req, res) => {
     if (storedOtp !== otp) {
       return res.status(401).json(new ApiError(401, "Invalid OTP"));
     }
-    return res.status(200).json(new ApiResponse(200, "OTP verified successfully"));
+    const token = jwt.sign({ email: email }, process.env.SECRET_KEY, {
+      expiresIn: "5m",
+    });
+    return res.status(200).json(new ApiResponse(200, "OTP verified successfully", token));
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
