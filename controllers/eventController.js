@@ -113,13 +113,13 @@ export const updateEvent = async (req, res) => {
 export const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    Event.findByIdAndDelete(id, (err, docs) => {
-      if (err) {
-        return res.status(500).json(new ApiError(500, "Failed to delete event"));
-      } else {
-        return new ApiResponse(200, "Event deleted successfully", docs);
-      }
-    });
+    const isDeleted = await Event.findByIdAndDelete(id);
+    console.log(isDeleted);
+    if (isDeleted) {
+      return res.status(200).json(new ApiResponse(200, "Event deleted successfully"));
+    } else {
+      return res.status(500).json(new ApiError(500, "Failed to delete event"));
+    }
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
