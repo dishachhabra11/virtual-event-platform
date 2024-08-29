@@ -95,6 +95,10 @@ const eventSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Rating count cannot be negative'],
     },
+    city: {
+      type: String,
+      required: false,
+    },
     tags: [
       {
         type: String,
@@ -105,6 +109,8 @@ const eventSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+eventSchema.index({ name: "text", description: "text", city: "text", genre: "text" });
 
 const Event = mongoose.model('Event', eventSchema);
 
