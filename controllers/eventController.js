@@ -5,10 +5,25 @@ import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find();
-    res.status(200).json(events);
+    let events = [];
+    const { pastEvent } = req.query;
+
+    if (pastEvent) {
+      events = await Event.find({
+        date: {
+          $lt: new Date(),
+        },
+      }).sort({ date: -1 });
+    } else {
+      events = await Event.find({
+        date: {
+          $gte: new Date(),
+        },
+      }).sort({ date: 1 });
+    }
+    res.status(200).json(new ApiResponse(200, "Events fetched successfully", events));
   } catch (error) {
-    res.status(500).json(error);
+    res.status(500).json(new ApiError(500, error.message));
   }
 };
 
@@ -127,149 +142,42 @@ export const deleteEvent = async (req, res) => {
   }
 };
 
-export const filterEventsByCity = async (req, res) => {
+export const filter = async (req, res) => {
   try {
-    const { city } = req.query;
+    const { city, genre, minPrice, maxPrice, search } = req.query;
+    const filters = {
+      city: city,
+      genre: genre,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
+    };
+    const aggregationPipeline = [];
+    const matchConditions = {};
 
-    if (!city) return res.status(400).json(new ApiError(400, "City is required"));
-    const filteredEvents = await Event.aggregate([
-      {
-        $match: {
-          city: city,
-        },
-      },
-    ]);
-    return res.status(200).json(new ApiResponse(200, "Events fetched successfully", filteredEvents));
+    if (filters.city) {
+      matchConditions.city = filters.city;
+    }
+    if (filters.genre) {
+      matchConditions.genre = filters.genre;
+    }
+    if (filters.minPrice && filters.maxPrice) {
+      matchConditions.price = {
+        $gte: parseFloat(filters.minPrice),
+        $lte: parseFloat(filters.maxPrice),
+      };
+    }
+    aggregationPipeline.push({
+      $match: matchConditions,
+    });
+
+    const events = await Event.aggregate(aggregationPipeline);
+    return res.status(200).json(new ApiResponse(200, "Events fetched successfully", events));
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
 };
 
-export const getUpcomingEvents = async (req, res) => {
-  try {
-    const date = new Date();
-    const upcomingEvents = await Event.aggregate([
-      {
-        $match: {
-          date: {
-            $gte: date,
-          },
-        },
-      },
-      {
-        $sort: {
-          date: 1,
-        },
-      },
-    ]);
-    return res.status(200).json(new ApiResponse(200, "Upcoming events fetched successfully", upcomingEvents));
-  } catch (error) {
-    return res.status(500).json(new ApiError(500, error.message));
-  }
-};
 
-export const getPastEvents = async (req, res) => {
-  try {
-    const date = new Date();
-    const upcomingEvents = await Event.aggregate([
-      {
-        $match: {
-          date: {
-            $lte: date,
-          },
-        },
-      },
-      {
-        $sort: {
-          date: -1,
-        },
-      },
-    ]);
-    return res.status(200).json(new ApiResponse(200, "Past events fetched successfully", upcomingEvents));
-  } catch (error) {
-    return res.status(500).json(new ApiError(500, error.message));
-  }
-};
-
-export const filterByGenre = async (req, res) => {
-  try {
-    const { genre } = req.query;
-    genre = genre.toLowerCase();
-    if (!genre) return res.status(400).json(new ApiError(400, "Genre is required"));
-
-    const filteredEvents = await Event.aggregate([
-      {
-        $facet: {
-          data: [
-            {
-              $match: {
-                genre: genre,
-              },
-            },
-            {
-              $sort: {
-                date: 1,
-              },
-            },
-          ],
-          count: [
-            {
-              $match: {
-                genre: genre,
-              },
-            },
-            {
-              $count: "count",
-            },
-          ],
-        },
-      },
-    ]);
-    return res.status(200).json(new ApiResponse(200, "Events fetched successfully", filteredEvents));
-  } catch (error) {}
-};
-
-export const filterByPrice = async (req, res) => {
-  try {
-    const lowestPrice = req.query.low;
-    const highestPrice = req.query.high;
-    if (!lowestPrice || !highestPrice) return res.status(400).json(new ApiError(400, "Price range is required"));
-
-    const filteredEvents = await Event.aggregate([
-      {
-        $facet: {
-          data: [
-            {
-              $match: {
-                price: {
-                  $gte: parseFloat(lowestPrice),
-                  $lte: parseFloat(highestPrice),
-                },
-              },
-            },
-          ],
-          count: [
-            {
-              $match: {
-                price: {
-                  $gte: parseFloat(lowestPrice),
-                  $lte: parseFloat(highestPrice),
-                },
-              },
-            },
-            {
-              $count: "count",
-            },
-          ],
-        },
-      },
-    ]);
-
-    return res.status(200).json(new ApiResponse(200, "Events fetched successfully", filteredEvents));
-  } catch (error) {
-    res.status(500).json(new ApiError(500, error.message));
-  }
-};
 
 export const searchEvents = async (req, res) => {
   try {

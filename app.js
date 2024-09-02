@@ -6,6 +6,7 @@ import middlewareRouter from "./routes/middlewareRouter.js";
 import eventRouter from "./routes/eventRoutes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import ticketRouter from "./routes/ticketRouter.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -17,7 +18,8 @@ app.use(cookieParser());
 
 app.use("/", middlewareRouter);
 app.use("/api/user", userRouter);
-app.use("/api/event", eventRouter)
+app.use("/api/event", eventRouter);
+app.use("/api/ticket", ticketRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
