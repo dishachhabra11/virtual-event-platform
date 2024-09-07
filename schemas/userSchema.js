@@ -12,8 +12,6 @@ const userSchema = z.object({
 });
 
 export const signinSchema = z.object({
-  name: z.string(),
-  username: z.string(),
   email: z.string().email("Invalid email"),
   password: z.string(),
 });
