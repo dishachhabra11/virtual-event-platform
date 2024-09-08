@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import userRouter from "./routes/userRoutes.js";
 import middlewareRouter from "./routes/middlewareRouter.js";
 import eventRouter from "./routes/eventRoutes.js";
+import paymentrouter from "./routes/paymentRoutes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import ticketRouter from "./routes/ticketRouter.js";
@@ -20,6 +21,7 @@ app.use("/", middlewareRouter);
 app.use("/api/user", userRouter);
 app.use("/api/event", eventRouter);
 app.use("/api/ticket", ticketRouter);
+app.use("/api/payment", paymentrouter);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
