@@ -11,6 +11,7 @@ import { ApiResponse ,ApiError} from "../utils/ApiResponses.js";
       price,
       seatNumber,
       status,
+      payment,
     });
       await newTicket.save();
       

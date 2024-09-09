@@ -1,10 +1,12 @@
 import client from "../utils/razorpayClient.js";
 import { ApiResponse, ApiError } from "../utils/ApiResponses.js";
 import Payment from "../models/paymentModel.js";
+import crypto from "crypto";
+import Ticket from "../models/ticketModel.js";
 
 export const createOrderId = async (req, res) => {
   try {
-    const { amount, ticketId, buyerId } = req.body;
+    const { amount, buyerId } = req.body;
     const options = {
       amount: amount * 100,
       currency: "INR",
@@ -13,15 +15,16 @@ export const createOrderId = async (req, res) => {
     const response = await client.orders.create(options);
     console.log(response.receipt);
     const newPayment = new Payment({
-      ticket: ticketId,
       buyer: buyerId,
-      amount,
+      amount: amount,
       paymentMethod: "credit_card",
       paymentStatus: "pending",
       transactionId: response.id,
     });
-    newPayment.save();
+    await newPayment.save();
+    // console.log("newPayment", newPayment);
     return res.status(200).json({
+      newPayment,
       response,
       key: process.env.RAZORPAY_KEY_ID,
     });
@@ -32,7 +35,7 @@ export const createOrderId = async (req, res) => {
 
 export const verifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, eventDetails } = req.body;
 
     const generatedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
@@ -40,9 +43,30 @@ export const verifyPayment = async (req, res) => {
       .digest("hex");
     //verify the signature geerate by razorpay with id and secret
     if (generatedSignature === razorpay_signature) {
-      const payment = await Payment.findOneAndUpdate({ transactionId: razorpay_order_id }, { paymentStatus: "completed", paymentDate: Date.now() });
+      const payment = await Payment.findOne({ transactionId: razorpay_order_id });
+      if (!payment) {
+        return res.status(400).json(new ApiError(400, "Payment jhatu failed"));
+      }
+      const paymentId = payment._id;
 
-      return res.status(200).json(new ApiResponse(200, "Payment verified successfully", payment));
+      const newTicket = new Ticket({
+        buyer: eventDetails.buyer,
+        event: eventDetails.event,
+        ticketType: eventDetails.ticketType,
+        price: eventDetails.price,
+        seatNumber: eventDetails.seatNumber,
+        payment: paymentId, // Link to the payment/order ID
+      });
+      await newTicket.save();
+
+    
+      payment.paymentStatus = "completed";
+      payment.paymentDate = Date.now();
+      payment.ticket = newTicket._id;
+  
+      await payment.save();
+
+      return res.status(200).json(new ApiResponse(200, "Payment verified successfully"));
     } else {
       return res.status(400).json(new ApiError(400, "Payment verification failed"));
     }
