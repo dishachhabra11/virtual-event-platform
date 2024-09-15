@@ -1,5 +1,6 @@
 import { adminRoutes} from "../utils/protectedRoutes.js";
 import { ApiError } from "../utils/ApiResponses.js";
+
 export const adminMiddleware = async (req, res, next) => {
   try {
     const path = req.path;
