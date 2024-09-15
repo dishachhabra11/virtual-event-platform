@@ -42,7 +42,7 @@ export const signup = async (req, res) => {
 
 export const signin = async (req, res) => {
   try {
-    const {  email, password } = req.body;
+    const { email, password } = req.body;
     const validatedUser = signinSchema.safeParse(req.body);
     if (!validatedUser.success) {
       const error = validatedUser.error.issues[0].message;

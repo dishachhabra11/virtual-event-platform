@@ -110,6 +110,7 @@ const eventSchema = new mongoose.Schema(
   }
 );
 
+
 eventSchema.index({ name: "text", description: "text", city: "text", genre: "text" });
 
 const Event = mongoose.model('Event', eventSchema);
