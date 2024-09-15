@@ -9,8 +9,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import setupPassport from "./services/passport.js";
 import paymentrouter from "./routes/paymentRoutes.js";
-import cookieParser from "cookie-parser";
-import cors from "cors";
 import ticketRouter from "./routes/ticketRouter.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
