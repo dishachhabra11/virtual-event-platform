@@ -29,8 +29,6 @@ app.use("/api/user", userRouter);
 app.use("/api/event", eventRouter);
 app.use('/auth', googleAuthRouter);
 app.use("/", middlewareRouter);
-app.use("/api/user", userRouter);
-app.use("/api/event", eventRouter);
 app.use("/api/ticket", ticketRouter);
 app.use("/api/payment", paymentrouter);
 

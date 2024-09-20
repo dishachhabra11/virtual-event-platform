@@ -204,3 +204,19 @@ export const searchEvents = async (req, res) => {
     return res.status(500).json(new ApiError(500, error.message));
   }
 };
+
+export const getEventsGenreWithCount = async (req, res) => {
+  try {
+    const events = await Event.aggregate([
+      {
+        $group: {
+          _id: "$genre",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    return res.status(200).json(new ApiResponse(200, "Events fetched successfully", events));
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
