@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 connectDb();
-dotenv.config({ path: "./.env.dev" });
+dotenv.config();
 app.use(cors({
   origin: ["http://localhost:3000"],
   credentials: true,

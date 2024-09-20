@@ -2,7 +2,7 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as googleStrategy } from "passport-google-oauth20";
 import  dotenv  from "dotenv";
-dotenv.config({ path: "./.env.dev" });
+dotenv.config();
 
 const setupPassport = (app) => {
   app.use(
