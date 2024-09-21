@@ -10,6 +10,8 @@ import cors from "cors";
 import setupPassport from "./services/passport.js";
 import paymentrouter from "./routes/paymentRoutes.js";
 import ticketRouter from "./routes/ticketRouter.js";
+import promotionRouter from "./routes/promotionRoutes.js";
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -31,6 +33,7 @@ app.use('/auth', googleAuthRouter);
 app.use("/", middlewareRouter);
 app.use("/api/ticket", ticketRouter);
 app.use("/api/payment", paymentrouter);
+app.use("/api/promotions", promotionRouter)
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
