@@ -3,6 +3,7 @@ import { ApiResponse, ApiError } from "../utils/ApiResponses.js";
 import Payment from "../models/paymentModel.js";
 import crypto from "crypto";
 import Ticket from "../models/ticketModel.js";
+import axios from "axios";
 
 export const createOrderId = async (req, res) => {
   try {
@@ -59,11 +60,22 @@ export const verifyPayment = async (req, res) => {
       });
       await newTicket.save();
 
-    
+      try {
+        const response = await axios.post("http://localhost:5000/api/ticket/createQR", {
+          ticketId: newTicket._id,
+        });
+        console.log(response.data.response.qrCode);
+        newTicket.qrCode = response.data.response.qrCode; // Adjust based on actual response structure
+        await newTicket.save();
+      } catch (error) {
+        console.error("Error generating QR code:", error);
+        return res.status(500).json(new ApiError(500, "Error generating QR code"));
+      }
+
       payment.paymentStatus = "completed";
       payment.paymentDate = Date.now();
       payment.ticket = newTicket._id;
-  
+
       await payment.save();
 
       return res.status(200).json(new ApiResponse(200, "Payment verified successfully"));

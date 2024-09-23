@@ -1,6 +1,7 @@
 import { cloudinary } from "../config/cloudinary.js";
 import fs from "fs";
 import Event from "../models/eventModel.js";
+import User from "../models/userModel.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 
 export const getAllEvents = async (req, res) => {
@@ -144,40 +145,70 @@ export const deleteEvent = async (req, res) => {
 
 export const filter = async (req, res) => {
   try {
-    const { city, genre, minPrice, maxPrice, search } = req.query;
+    const { city, genre, minPrice, maxPrice, date, performer } = req.query;
+    console.log(date);
     const filters = {
-      city: city,
-      genre: genre,
-      minPrice: minPrice,
-      maxPrice: maxPrice,
+      city,
+      genre,
+      minPrice: parseFloat(minPrice), // Parse to float
+      maxPrice: parseFloat(maxPrice), // Parse to float
+      date: date ? new Date(date) : null,
+      performer,
     };
+
     const aggregationPipeline = [];
     const matchConditions = {};
 
     if (filters.city) {
       matchConditions.city = filters.city;
     }
+
     if (filters.genre) {
       matchConditions.genre = filters.genre;
     }
-    if (filters.minPrice && filters.maxPrice) {
+
+    if (!isNaN(filters.minPrice) && !isNaN(filters.maxPrice)) {
       matchConditions.price = {
-        $gte: parseFloat(filters.minPrice),
-        $lte: parseFloat(filters.maxPrice),
+        $gte: filters.minPrice,
+        $lte: filters.maxPrice,
       };
+    } else if (!isNaN(filters.minPrice)) {
+      matchConditions.price = { $gte: filters.minPrice };
+    } else if (!isNaN(filters.maxPrice)) {
+      matchConditions.price = { $lte: filters.maxPrice };
     }
+    if (filters.date) {
+      console.log("applied");
+      matchConditions.date = filters.date;
+    }
+    aggregationPipeline.push({
+      $lookup: {
+        from: "User",
+        localField: "performers",
+        foreignField: "_id",
+        as: "performerDetails",
+      },
+    });
+    // Push match stage into aggregation pipeline
     aggregationPipeline.push({
       $match: matchConditions,
     });
+    if (filters.performer) {
+      aggregationPipeline.push({
+        $match: {
+          "performerDetails.name": { $regex: filters.performer, $options: "i" },
+        },
+      });
+    }
 
+    // Execute aggregation pipeline
     const events = await Event.aggregate(aggregationPipeline);
+
     return res.status(200).json(new ApiResponse(200, "Events fetched successfully", events));
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }
 };
-
-
 
 export const searchEvents = async (req, res) => {
   try {
