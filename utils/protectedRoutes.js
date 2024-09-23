@@ -2,3 +2,4 @@ export const unauthorizedRoutes = ["/api/user/signin", "/api/payment/create-orde
 export const organizerRoutes = [""];
 export const adminRoutes = [""];
 export const hostRoutes = [""];
+
