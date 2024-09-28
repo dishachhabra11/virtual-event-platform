@@ -1,7 +1,7 @@
 import axios from "axios";
 import generateTokenAndSetCookies from "../utils/helpers/generateTokenAndSetCookies.js";
 import generatePassword from "generate-password";
-import bcrypt from "bcryptjs"
+import bcrypt from "bcryptjs";
 import User from "../models/userModel.js";
 import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 
@@ -9,12 +9,9 @@ import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 export const initiateGoogleAuth = async (req, res) => {
   try {
     // Perform a GET request to Google's OAuth2 authentication URL with query parameters
-    const response = await axios.get(
-      "https://accounts.google.com/o/oauth2/v2/auth",
-      {
-        params: req.query,
-      }
-    );
+    const response = await axios.get("https://accounts.google.com/o/oauth2/v2/auth", {
+      params: req.query,
+    });
     // Send the response from Google to the client
     res.send(response);
   } catch (error) {
@@ -35,14 +32,12 @@ export const loginSuccess = async (req, res) => {
       const token = generateTokenAndSetCookies(userExists._id, res);
 
       // If the user is found, send a successful response with the user data
-      return res
-        .status(200)
-        .json(
-          new ApiResponse(200, "Login Successful", {
-            user: userExists,
-            token,
-          })
-        );
+      return res.status(200).json(
+        new ApiResponse(200, "Login Successful", {
+          user: userExists,
+          token,
+        })
+      );
     } else {
       // If no user is found in the database, respond with a 404 Not Found error
       const password = generatePassword.generate({
@@ -50,11 +45,11 @@ export const loginSuccess = async (req, res) => {
         numbers: true,
         symbols: true,
         uppercase: true,
-        lowercase: true
-    });
+        lowercase: true,
+      });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
 
       const newUser = new User({
         name: req.user._json.name,
@@ -65,18 +60,14 @@ export const loginSuccess = async (req, res) => {
       });
 
       await newUser.save();
-      const userData = await User.findById(newUser._id).select(
-        "-password -createdAt -updatedAt -__v"
-      );
+      const userData = await User.findById(newUser._id).select("-password -createdAt -updatedAt -__v");
       const token = generateTokenAndSetCookies(newUser._id, res);
-      return res
-        .status(200)
-        .json(
-          new ApiResponse(200, "Login Successful", {
-            user: userData,
-            token,
-          })
-        );
+      return res.status(200).json(
+        new ApiResponse(200, "Login Successful", {
+          user: userData,
+          token,
+        })
+      );
     }
   } else {
     // If no user info is available in the request, the login failed, respond with a 403 Forbidden

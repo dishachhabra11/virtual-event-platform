@@ -1,4 +1,4 @@
-import razorpay from 'razorpay';
+import razorpay from "razorpay";
 
 const client = new razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,

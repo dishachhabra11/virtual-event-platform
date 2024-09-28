@@ -6,6 +6,7 @@ import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 
 export const getAllEvents = async (req, res) => {
   try {
+    console.log(process.env.RAZORPAY_KEY_ID);
     let events = [];
     const { pastEvent } = req.query;
 
@@ -146,12 +147,13 @@ export const deleteEvent = async (req, res) => {
 export const filter = async (req, res) => {
   try {
     const { city, genre, minPrice, maxPrice, date, performer } = req.query;
-    console.log(date);
+
+    // Parse filters from query
     const filters = {
       city,
       genre,
-      minPrice: parseFloat(minPrice), // Parse to float
-      maxPrice: parseFloat(maxPrice), // Parse to float
+      minPrice: parseFloat(minPrice), // Convert to float
+      maxPrice: parseFloat(maxPrice), // Convert to float
       date: date ? new Date(date) : null,
       performer,
     };
@@ -159,6 +161,7 @@ export const filter = async (req, res) => {
     const aggregationPipeline = [];
     const matchConditions = {};
 
+    // Add filters to matchConditions
     if (filters.city) {
       matchConditions.city = filters.city;
     }
@@ -177,26 +180,31 @@ export const filter = async (req, res) => {
     } else if (!isNaN(filters.maxPrice)) {
       matchConditions.price = { $lte: filters.maxPrice };
     }
+
     if (filters.date) {
-      console.log("applied");
       matchConditions.date = filters.date;
     }
+
+    // Add $lookup to join performers from the User collection
     aggregationPipeline.push({
       $lookup: {
-        from: "User",
+        from: "users", // MongoDB will use lowercase and pluralize the collection name
         localField: "performers",
         foreignField: "_id",
         as: "performerDetails",
       },
     });
-    // Push match stage into aggregation pipeline
+
+    // Add the match conditions for city, genre, price, date
     aggregationPipeline.push({
       $match: matchConditions,
     });
+
+    // Add a condition to match performer name using a case-insensitive regex
     if (filters.performer) {
       aggregationPipeline.push({
         $match: {
-          "performerDetails.name": { $regex: filters.performer, $options: "i" },
+          "performerDetails.name": { $regex: filters.performer, $options: "i" }, // 'i' for case-insensitive
         },
       });
     }
@@ -204,9 +212,16 @@ export const filter = async (req, res) => {
     // Execute aggregation pipeline
     const events = await Event.aggregate(aggregationPipeline);
 
-    return res.status(200).json(new ApiResponse(200, "Events fetched successfully", events));
+    return res.status(200).json({
+      status: 200,
+      message: "Events fetched successfully",
+      data: events,
+    });
   } catch (error) {
-    return res.status(500).json(new ApiError(500, error.message));
+    return res.status(500).json({
+      status: 500,
+      message: error.message,
+    });
   }
 };
 
