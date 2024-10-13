@@ -80,8 +80,12 @@ export const createEvent = async (req, res) => {
 export const getEventById = async (req, res) => {
   /// get id from req.params
   try {
+    console.log("hello");
     const { id } = req.params;
     const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json(new ApiError(404, "Event not found"));
+    }
     res.status(200).json(new ApiResponse(200, "Event fetched successfully", event));
   } catch (error) {
     res.status(500).json(new ApiError(500, error.message));
