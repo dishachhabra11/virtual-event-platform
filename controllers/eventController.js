@@ -6,7 +6,6 @@ import { ApiError, ApiResponse } from "../utils/ApiResponses.js";
 
 export const getAllEvents = async (req, res) => {
   try {
-    console.log(process.env.RAZORPAY_KEY_ID);
     let events = [];
     const { pastEvent } = req.query;
 
@@ -80,7 +79,6 @@ export const createEvent = async (req, res) => {
 export const getEventById = async (req, res) => {
   /// get id from req.params
   try {
-    console.log("hello");
     const { id } = req.params;
     const event = await Event.findById(id);
     if (!event) {
@@ -165,6 +163,8 @@ export const filter = async (req, res) => {
     const aggregationPipeline = [];
     const matchConditions = {};
 
+    matchConditions.date = { $gte: new Date() };
+
     // Add filters to matchConditions
     if (filters.city) {
       matchConditions.city = filters.city;
@@ -213,7 +213,6 @@ export const filter = async (req, res) => {
       });
     }
 
-    // Execute aggregation pipeline
     const events = await Event.aggregate(aggregationPipeline);
 
     return res.status(200).json({
@@ -266,6 +265,104 @@ export const getEventsGenreWithCount = async (req, res) => {
       },
     ]);
     return res.status(200).json(new ApiResponse(200, "Events fetched successfully", events));
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const incrementEventLikes = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body; // Assuming userId is sent in the request body
+
+    if (!userId) {
+      return res.status(400).json(new ApiError(400, "Invalid user ID"));
+    }
+
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json(new ApiError(404, "Event not found"));
+    }
+
+    event.likes = event.likes || [];
+    event.dislikes = event.dislikes || [];
+
+    event.likes = event.likes.filter((likeId) => likeId);
+    event.dislikes = event.dislikes.filter((dislikeId) => dislikeId);
+
+    if (!event.likes.includes(userId)) {
+      event.likes.push(userId);
+
+      event.dislikes = event.dislikes.filter((dislikeId) => dislikeId.toString() !== userId);
+    } else {
+      event.likes = event.likes.filter((likeId) => likeId.toString() !== userId);
+    }
+
+    await event.save({ validateModifiedOnly: true });
+    console.log("liked");
+    return res.status(200).json(new ApiResponse(200, "Event likes updated successfully", event));
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const incrementEventDislikes = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json(new ApiError(404, "Event not found"));
+    }
+    event.likes = event.likes || [];
+    event.dislikes = event.dislikes || [];
+
+    if (!event.dislikes.includes(userId)) {
+      event.dislikes.push(userId);
+
+      event.likes = event.likes.filter((likeId) => likeId.toString() !== userId);
+    } else {
+      event.dislikes = event.dislikes.filter((dislikeId) => dislikeId.toString() !== userId);
+    }
+
+    await event.save({ validateModifiedOnly: true });
+
+    return res.status(200).json(new ApiResponse(200, "Event dislikes updated successfully", event));
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const trendingEvents = async (req, res) => {
+  try {
+    const events = await Event.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: new Date(),
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          image: 1,
+          language: 1,
+          likes: 1,
+          likesCount: { $size: { $ifNull: ["$likes", []] } },
+        },
+      },
+      {
+        $sort: { likesCount: -1 },
+      },
+      {
+        $limit: 10,
+      },
+    ]);
+
+    return res.status(200).json(new ApiResponse(200, "Trending events fetched successfully", events));
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }

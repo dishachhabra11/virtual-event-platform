@@ -52,18 +52,50 @@ export const signin = async (req, res) => {
     if (!user) {
       return res.status(401).json(new ApiError(401, "User not found"));
     }
-    console.log(user);
+
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return res.status(401).json(new ApiError(401, "Invalid password"));
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: 1296000 });
+    console.log(" new  user reach to sign in is", user);
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "15d" });
+
+    console.log("cookie token", token);
+
     res.cookie("token", token, {
-      maxAge: tokenExpiry * 1000,
-      httpOnly: true,
+      maxAge: 15 * 24 * 60 * 60 * 1000,
+      httpOnly: false,
+      secure: false,
+      sameSite: "None",
     });
+
     return res.status(200).json({ message: "user logged in successfully", data: user, token: token });
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+};
+
+export const getUserInfo = async (req, res) => {
+  try {
+    const { id } = req.params; // Get user ID from the request parameters
+
+    // Validate the ID format (optional, depending on your requirements)
+    if (!id) {
+      return res.status(400).json(new ApiError(400, "User ID is required"));
+    }
+
+    // Find the user by ID
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json(new ApiError(404, "User not found"));
+    }
+
+    // Remove sensitive information before sending the response
+    const { password, ...userDetails } = user.toObject();
+
+    return res.status(200).json({ message: "User info retrieved successfully", data: userDetails });
   } catch (error) {
     return res.status(500).json(new ApiError(500, error.message));
   }

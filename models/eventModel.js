@@ -1,41 +1,41 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, 'Event title is required'],
+      required: [true, "Event title is required"],
       trim: true,
     },
     description: {
       type: String,
-      required: [true, 'Event description is required'],
+      required: [true, "Event description is required"],
       trim: true,
     },
     date: {
       type: Date,
-      required: [true, 'Event date is required'],
+      required: [true, "Event date is required"],
       validate: {
         validator: function (value) {
           return value >= new Date();
         },
-        message: 'Event date must be in the future',
+        message: "Event date must be in the future",
       },
     },
     time: {
       type: String,
-      required: [true, 'Event time is required'],
+      required: [true, "Event time is required"],
       validate: {
         validator: function (value) {
           // Basic validation for HH:MM format (24-hour clock)
           return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value);
         },
-        message: 'Invalid time format (HH:MM)',
+        message: "Invalid time format (HH:MM)",
       },
     },
     location: {
       type: String,
-      required: [true, 'Event location is required'],
+      required: [true, "Event location is required"],
       trim: true,
     },
     image: {
@@ -47,7 +47,7 @@ const eventSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
-      min: [0, 'Price cannot be negative'],
+      min: [0, "Price cannot be negative"],
     },
     link: {
       type: String,
@@ -66,34 +66,34 @@ const eventSchema = new mongoose.Schema(
     },
     availableSeats: {
       type: Number,
-      min: [0, 'Available seats cannot be negative'],
-      required: [true, 'Available seats are required'],
+      min: [0, "Available seats cannot be negative"],
+      required: [true, "Available seats are required"],
     },
     ticketsSold: {
       type: Number,
       default: 0,
-      min: [0, 'Tickets sold cannot be negative'],
+      min: [0, "Tickets sold cannot be negative"],
     },
     performers: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: "User",
       },
     ],
     creator: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: [true, 'Event creator is required'],
+      ref: "User",
+      required: [true, "Event creator is required"],
     },
     rating: {
       type: Number,
-      min: [0, 'Rating cannot be negative'],
-      max: [5, 'Rating cannot exceed 5'],
+      min: [0, "Rating cannot be negative"],
+      max: [5, "Rating cannot exceed 5"],
     },
     ratingCount: {
       type: Number,
       default: 0,
-      min: [0, 'Rating count cannot be negative'],
+      min: [0, "Rating count cannot be negative"],
     },
     city: {
       type: String,
@@ -104,15 +104,28 @@ const eventSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+      },
+    ],
+    dislikes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
 
-
 eventSchema.index({ name: "text", description: "text", city: "text", genre: "text" });
 
-const Event = mongoose.model('Event', eventSchema);
+const Event = mongoose.model("Event", eventSchema);
 
 export default Event;

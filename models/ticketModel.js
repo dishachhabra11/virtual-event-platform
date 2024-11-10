@@ -10,12 +10,12 @@ const ticketSchema = new mongoose.Schema(
     buyer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Ticket buyer is required'],
+      required: [false, 'Ticket buyer is required'],
     },
     ticketType: {
       type: String,
       enum: ['general', 'vip'],
-      required: [true, 'Ticket type is required'],
+      required: [false, 'Ticket type is required'],
       trim: true,
     },
     price: {
@@ -26,6 +26,7 @@ const ticketSchema = new mongoose.Schema(
     seatNumber: {
       type: String,
       trim: true,
+      required:false,
     },
     purchaseDate: {
       type: Date,
@@ -36,14 +37,16 @@ const ticketSchema = new mongoose.Schema(
       type: String,
       enum: ['active', 'used', 'cancelled'],
       default: 'active',
-      required: [true, 'Ticket status is required'],
+      required: [false, 'Ticket status is required'],
     },
     qrCode: {
       type: String,
+      required: false,
     },
     payment: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Payment',
+      required:false,
     },
   },
   {

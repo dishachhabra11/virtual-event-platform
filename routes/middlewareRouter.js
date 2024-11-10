@@ -6,9 +6,9 @@ import { hostMiddleware } from "../middlewares/hostMiddleware.js";
 
 const middlewareRouter = express.Router();
 
-// middlewareRouter.use((req, res, next) => {
-//   authMiddleware(req, res, next);
-// });
+middlewareRouter.use((req, res, next) => {
+  authMiddleware(req, res, next);
+});
 // middlewareRouter.use((req, res, next) => {
 //   organizerMiddleware(req, res, next);
 // });
